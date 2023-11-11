@@ -8,7 +8,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
+      - name: Convert repository name to lowercase
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -22,23 +29,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build the Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          load: true
-          tags: ${{ github.repository }}:temp
-
-      - name: Get the version of the server
-        run: |
-          version=$(docker run --rm ${{ github.repository }}:temp --version 2>&1 | awk '{print $3}')
-          echo $version
-          echo "VERSION=$version" >> $GITHUB_ENV
-
-      - name: Convert repository name to lowercase
-        run: echo "REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
-
       - name: Build and push Docker images
         uses: docker/build-push-action@v5
         with:
@@ -48,4 +38,19 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.REPO_NAME }}:latest
+
+      - name: Get the version of the server
+        run: |
+          version=$(docker run --rm ${{ github.repository }}:latest --version 2>&1 | awk '{print $3}')
+          echo $version
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.REPO_NAME }}:${{ env.VERSION }}
