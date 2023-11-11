@@ -32,7 +32,7 @@ jobs:
 
       - name: Get the version of the server
         run: |
-          version=$(docker run --rm ${{ github.repository }}:temp --version | cut -d ' ' -f 3)
+          version=$(docker run --rm ${{ github.repository }}:temp --version | awk '{print $3}')
           echo $version
           echo "VERSION=$version" >> $GITHUB_ENV
 
