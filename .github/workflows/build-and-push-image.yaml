@@ -22,11 +22,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get the version of the server and convert repository name to lowercase
-        id: version
+      - name: Build the Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: ${{ github.repository }}:temp
+
+      - name: Get the version of the server
         run: |
-          echo "VERSION=$(./telegram-bot-api --version | cut -d ' ' -f 3)" >> $GITHUB_ENV
-          echo "REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV 
+          version=$(docker run --rm ${{ github.repository }}:temp --version | cut -d ' ' -f 3)
+          echo $version
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      - name: Convert repository name to lowercase
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v5
