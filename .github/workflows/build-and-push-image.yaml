@@ -38,14 +38,16 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          load: true
+          push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
 
-      - name: Get the version of the server and tag the image
+      - name: Get the version of the server
         run: |
           version=$(docker run --rm ${{ env.IMAGE_NAME }}:latest --version 2>&1 | awk '{print $3}')
-          echo $version
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$version
-          docker push ${{ env.IMAGE_NAME }}:$version
-          docker push ${{ env.IMAGE_NAME }}:latest
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: Tag the image
+        run: |
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ env.version }}
+          docker push ${{ env.IMAGE_NAME }}:${{ env.version }}
