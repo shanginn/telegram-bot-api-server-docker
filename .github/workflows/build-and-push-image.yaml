@@ -32,15 +32,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Build and push Docker images
-#        uses: docker/build-push-action@v5
-#        with:
-#          context: .
-#          file: ./Dockerfile
-#          platforms: linux/amd64,linux/arm64
-#          push: true
-#          tags: |
-#            ${{ env.IMAGE_NAME }}:latest
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
 
       - name: Get the version of the server
         run: |
@@ -52,10 +52,10 @@ jobs:
           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ env.version }}
           docker push ${{ env.IMAGE_NAME }}:${{ env.version }}
           
-          MAJOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1)
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
-          docker push ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
-          
           MINOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1,2)
           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MINOR_VERSION
           docker push ${{ env.IMAGE_NAME }}:$MINOR_VERSION
+          
+          MAJOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1)
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
+          docker push ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
