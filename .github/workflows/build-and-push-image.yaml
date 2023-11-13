@@ -32,19 +32,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:latest
+#      - name: Build and push Docker images
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: ./Dockerfile
+#          platforms: linux/amd64,linux/arm64
+#          push: true
+#          tags: |
+#            ${{ env.IMAGE_NAME }}:latest
 
       - name: Get the version of the server
         run: |
-          version=$(docker run --rm ${{ env.IMAGE_NAME }}:latest --version 2>&1 | awk '{print $3}')
+          version=$(docker run --quiet --rm ${{ env.IMAGE_NAME }}:latest --version 2>&1 | awk '{print $3}')
           echo "version=$version" >> $GITHUB_ENV
 
       - name: Tag the image
