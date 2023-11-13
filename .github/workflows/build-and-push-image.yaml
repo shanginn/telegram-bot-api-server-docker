@@ -51,3 +51,11 @@ jobs:
         run: |
           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ env.version }}
           docker push ${{ env.IMAGE_NAME }}:${{ env.version }}
+          
+          MAJOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1)
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
+          docker push ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
+          
+          MINOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1,2)
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MINOR_VERSION
+          docker push ${{ env.IMAGE_NAME }}:$MINOR_VERSION
