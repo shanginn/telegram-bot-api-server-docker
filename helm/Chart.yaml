@@ -1,0 +1,5 @@
+apiVersion: v2
+name: telegram-server
+description: A Helm chart for Telegram Bot API Server
+version: 0.1.0
+appVersion: 0.1.0

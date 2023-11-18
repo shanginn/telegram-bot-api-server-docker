@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "telegram-server.fullname" . }}
+  labels:
+    {{- include "telegram-server.labels" . | nindent 4 }}
+    service: {{ include "telegram-server.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "telegram-server.selectorLabels" . | nindent 6 }}
+      service: {{ include "telegram-server.fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "telegram-server.selectorLabels" . | nindent 8 }}
+        service: {{ include "telegram-server.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "telegram-server.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "telegram-server.fullname" . }}-env
+            - secretRef:
+                name: {{ include "telegram-server.fullname" . }}-secret
+          command:
+            {{- $args := .Values.command | regexReplaceAll "[\\s\\n]+" " " | split " " }}
+            {{- range $arg := $args }}
+            {{- if $arg }}
+            - {{ $arg | trim | quote }}
+            {{- end }}
+            {{- end }}
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: "{{ .Values.persistence.mountPath }}"
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "telegram-server.fullname" . }}

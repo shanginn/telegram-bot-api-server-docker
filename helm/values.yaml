@@ -1,0 +1,35 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/shanginn/telegram-bot-api-server-docker
+  pullPolicy: IfNotPresent
+  tag: latest
+
+serviceAccount:
+  create: true
+  name: telegram-server
+
+service:
+  type: ClusterIP
+  port: 8081
+
+env:
+  TELEGRAM_WORKING_DIR: /app/data
+
+envSecrets:
+  TELEGRAM_API_ID: ""
+  TELEGRAM_API_HASH: ""
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: 20Gi
+  mountPath: /app/data
+
+command: |
+  telegram-bot-api --http-port=8081
+    --dir=$(TELEGRAM_WORKING_DIR)
+    --temp-dir=$(TELEGRAM_WORKING_DIR)/tmp
+    --local -v 2
+
