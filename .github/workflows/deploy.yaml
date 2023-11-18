@@ -32,7 +32,7 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           cd helm
-          helm upgrade api -f values.yaml . \
+          helm upgrade telegram-server -f values.yaml . \
             --set=envSecrets.TELEGRAM_API_ID="${TELEGRAM_API_ID}" \
             --set=envSecrets.TELEGRAM_API_HASH="${TELEGRAM_API_HASH}"
           kubectl rollout restart deployment/telegram-server
