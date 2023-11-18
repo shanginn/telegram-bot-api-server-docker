@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save Kube Config
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p ~/.kube/
+          echo "${KUBECONFIG}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy app
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          cd helm
+          helm upgrade api -f values.yaml . \
+            --set=envSecrets.TELEGRAM_API_ID="${TELEGRAM_API_ID}" \
+            --set=envSecrets.TELEGRAM_API_HASH="${TELEGRAM_API_HASH}"
+          kubectl rollout restart deployment/telegram-server
