@@ -31,5 +31,5 @@ command: |
   telegram-bot-api --http-port=8081
     --dir=$(TELEGRAM_WORKING_DIR)
     --temp-dir=$(TELEGRAM_WORKING_DIR)/tmp
-    --local -v 2
+    --local -v 1
 
