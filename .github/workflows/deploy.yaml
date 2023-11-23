@@ -35,7 +35,7 @@ jobs:
           cd helm
           helm upgrade telegram-server -f values.yaml . \
             --set=envSecrets.TELEGRAM_API_ID="${TELEGRAM_API_ID}" \
-            --set=envSecrets.TELEGRAM_API_HASH="${TELEGRAM_API_HASH}"
+            --set=envSecrets.TELEGRAM_API_HASH="${TELEGRAM_API_HASH}" \
             --set ingress.enabled=true \
             --set 'ingress.hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}" \
             --set 'ingress.tls[0].hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}"
