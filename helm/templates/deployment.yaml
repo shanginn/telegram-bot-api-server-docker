@@ -39,7 +39,23 @@ spec:
           volumeMounts:
             - mountPath: "{{ .Values.persistence.mountPath }}"
               name: data
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/tg-data
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: {{ include "telegram-server.fullname" . }}
+        - name: nginx-config
+          configMap:
+            name: {{ template "telegram-server.fullname" . }}-nginx-config
