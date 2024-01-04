@@ -3,7 +3,7 @@ FROM alpine:latest as builder
 RUN apk update && apk upgrade && \
     apk --no-cache add --update alpine-sdk linux-headers git zlib-dev openssl-dev gperf cmake
 
-RUN git clone --recursive https://github.com/tdlib/telegram-bot-telegram-server.git /telegram-bot-api
+RUN git clone --recursive https://github.com/tdlib/telegram-bot-api.git /telegram-bot-api
 
 WORKDIR /telegram-bot-api/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr/local ..
