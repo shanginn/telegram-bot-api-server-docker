@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/shanginn/telegram-bot-api-server-docker
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: 7.0.0
 
 serviceAccount:
   create: true
