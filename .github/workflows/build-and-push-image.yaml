@@ -1,15 +1,18 @@
-name: Build and Deploy to Docker Registry
+name: Build and Deploy
 
 on:
+  push:
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    env:
+      SERVER_VERSION: "10.2"
     permissions:
       contents: read
       packages: write
-      id-token: write
     steps:
       - name: Prepare environment
         run: |
@@ -23,8 +26,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -39,21 +42,53 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ env.SERVER_VERSION }}
+            ${{ env.IMAGE_NAME }}:10
 
-      - name: Get the version of the server
+      - name: Verify published server version
         run: |
-          version=$(docker run --quiet --rm ${{ env.IMAGE_NAME }}:latest --version 2>&1 | awk '{print $3}')
-          echo "version=$version" >> $GITHUB_ENV
+          version=$(docker run --quiet --rm ${{ env.IMAGE_NAME }}:${SERVER_VERSION} --version 2>&1)
+          test "${version}" = "Bot API ${SERVER_VERSION}"
 
-      - name: Tag the image
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save Kube Config
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ env.version }}
-          docker push ${{ env.IMAGE_NAME }}:${{ env.version }}
-          
-          MINOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1,2)
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MINOR_VERSION
-          docker push ${{ env.IMAGE_NAME }}:$MINOR_VERSION
-          
-          MAJOR_VERSION=$(echo ${{ env.version }} | cut -d. -f1)
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
-          docker push ${{ env.IMAGE_NAME }}:$MAJOR_VERSION
+          mkdir -p ~/.kube/
+          echo "${KUBECONFIG_CONTENT}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy and verify
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_FILES_SERVE_HOST: ${{ secrets.TELEGRAM_FILES_SERVE_HOST }}
+        run: |
+          helm upgrade telegram-server ./helm \
+            --namespace telegram-server \
+            --create-namespace \
+            --values helm/values.yaml \
+            --set-string=envSecrets.TELEGRAM_API_ID="${TELEGRAM_API_ID}" \
+            --set-string=envSecrets.TELEGRAM_API_HASH="${TELEGRAM_API_HASH}" \
+            --set ingress.enabled=true \
+            --set 'ingress.hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}" \
+            --set 'ingress.tls[0].hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}" \
+            --atomic \
+            --timeout 10m \
+            --history-max 10
+          kubectl -n telegram-server rollout status deployment/telegram-server --timeout=10m
+          test "$(kubectl -n telegram-server exec deployment/telegram-server -c telegram-server -- telegram-bot-api --version)" = "Bot API 10.2"
