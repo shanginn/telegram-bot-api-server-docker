@@ -11,7 +11,7 @@ RUN git clone https://github.com/tdlib/telegram-bot-api.git /telegram-bot-api &&
 
 WORKDIR /telegram-bot-api/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr/local ..
-RUN cmake --build . --target install
+RUN cmake --build . --target install --parallel 2
 
 FROM alpine:3.24.1
 
