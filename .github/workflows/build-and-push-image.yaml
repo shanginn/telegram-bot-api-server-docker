@@ -51,6 +51,8 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ env.SERVER_VERSION }}-${{ matrix.suffix }}
+          cache-from: type=gha,scope=telegram-server-${{ matrix.suffix }}
+          cache-to: type=gha,mode=max,scope=telegram-server-${{ matrix.suffix }}
 
       - name: Verify published architecture image
         run: |
@@ -123,8 +125,10 @@ jobs:
             --set ingress.enabled=true \
             --set 'ingress.hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}" \
             --set 'ingress.tls[0].hosts[0]'="${TELEGRAM_FILES_SERVE_HOST}" \
-            --atomic \
+            --rollback-on-failure \
+            --wait \
             --timeout 10m \
             --history-max 10
           kubectl -n telegram-server rollout status deployment/telegram-server --timeout=10m
-          test "$(kubectl -n telegram-server exec deployment/telegram-server -c telegram-server -- telegram-bot-api --version)" = "Bot API 10.2"
+          version="$(kubectl -n telegram-server exec deployment/telegram-server -c telegram-server -- telegram-bot-api --version 2>&1)"
+          test "${version}" = "Bot API ${SERVER_VERSION}"
